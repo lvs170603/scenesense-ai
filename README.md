@@ -2,6 +2,15 @@
 
 > **A production-ready AI web app** that generates smart image captions in English, Hindi, and Telugu with voice output — powered by BLIP, MarianMT, and gTTS. Features a complete authentication flow using JWT and Brevo SMTP OTP verification.
 
+🌐 **Live Demo:** [https://scene-sense-ai.vercel.app](https://scene-sense-ai.vercel.app)
+
+| | |
+|---|---|
+| **Frontend** | [![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel)](https://scene-sense-ai.vercel.app) |
+| **Backend** | [![Render](https://img.shields.io/badge/Render-Deployed-46E3B7?logo=render)](https://github.com/lvs170603/SceneSenseAI-backend) |
+| **Frontend Repo** | [![GitHub](https://img.shields.io/badge/GitHub-SceneSenseAI--Frontend-181717?logo=github)](https://github.com/lvs170603/SceneSenseAI-Frontend) |
+| **Backend Repo** | [![GitHub](https://img.shields.io/badge/GitHub-SceneSenseAI--backend-181717?logo=github)](https://github.com/lvs170603/SceneSenseAI-backend) |
+
 ---
 
 ## ✨ Features
