@@ -1,47 +1,29 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiMail, FiLock, FiCamera, FiArrowRight, FiEye, FiEyeOff, FiAlertCircle } from 'react-icons/fi';
-import { login, saveSession } from '../services/authApi';
+import { FiMail, FiCamera, FiArrowRight, FiAlertCircle, FiArrowLeft } from 'react-icons/fi';
+import { forgotPassword } from '../services/authApi';
 
-const Login = () => {
+const ForgotPassword = () => {
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [showPass, setShowPass] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
-
-    const handleEmailChange = (e) => {
-        setEmail(e.target.value);
-        if (error) setError('');
-    };
-
-    const handlePasswordChange = (e) => {
-        setPassword(e.target.value);
-        if (error) setError('');
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
-        if (!email || !password) {
-            setError('Email and password are required');
+        if (!email) {
+            setError('Please enter your registered email address.');
             return;
         }
 
         setLoading(true);
         try {
-            const data = await login({ email, password });
-
-            if (data.verified === false) {
-                navigate(`/verify-otp?email=${encodeURIComponent(email)}`);
-                return;
-            }
-
-            saveSession(data.token, data.user);
-            navigate('/app');
+            await forgotPassword({ email });
+            // Always redirect to reset page, pass the email along
+            navigate(`/reset-password?email=${encodeURIComponent(email)}`);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -87,21 +69,15 @@ const Login = () => {
                 <div className="absolute top-0 left-12 right-12 h-px rounded-full"
                     style={{ background: 'linear-gradient(90deg, transparent, #7C3AED, #06B6D4, transparent)' }} />
 
-                {/* Icon + heading */}
+                {/* Heading */}
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-5"
-                        style={{
-                            background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.15))',
-                            border: '1px solid rgba(124,58,237,0.3)',
-                            boxShadow: '0 0 30px rgba(124,58,237,0.25)',
-                        }}>
-                        <FiCamera size={26} style={{ color: '#7C3AED' }} />
-                    </div>
                     <h1 className="text-3xl font-bold mb-2"
                         style={{ color: '#F1F5F9', fontFamily: 'Poppins, sans-serif' }}>
-                        Welcome Back
+                        Reset Password
                     </h1>
-                    <p className="text-sm" style={{ color: '#94A3B8' }}>Log in to access your AI workspace.</p>
+                    <p className="text-sm" style={{ color: '#94A3B8' }}>
+                        Enter your email address and we'll send you an OTP to reset your password.
+                    </p>
                 </div>
 
                 {/* Error banner */}
@@ -120,49 +96,22 @@ const Login = () => {
                     {/* Email */}
                     <div className="space-y-1.5">
                         <label className="block text-xs font-semibold uppercase tracking-wider"
-                            style={{ color: '#94A3B8' }}>Email</label>
+                            style={{ color: '#94A3B8' }}>Email Address</label>
                         <div className="relative">
                             <FiMail className="absolute left-4 top-1/2 -translate-y-1/2"
                                 style={{ color: '#475569' }} />
                             <input
                                 type="email"
                                 value={email}
-                                onChange={handleEmailChange}
+                                onChange={(e) => {
+                                    setEmail(e.target.value);
+                                    if (error) setError('');
+                                }}
                                 placeholder="you@company.com"
                                 className="input-base pl-11"
                                 autoComplete="email"
+                                autoFocus
                             />
-                        </div>
-                    </div>
-
-                    {/* Password */}
-                    <div className="space-y-1.5">
-                        <div className="flex justify-between items-center">
-                            <label className="text-xs font-semibold uppercase tracking-wider"
-                                style={{ color: '#94A3B8' }}>Password</label>
-                            <Link to="/forgot-password" className="text-xs transition-colors hover:text-white"
-                                style={{ color: '#7C3AED' }}>Forgot Password?</Link>
-                        </div>
-                        <div className="relative">
-                            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2"
-                                style={{ color: '#475569' }} />
-                            <input
-                                type={showPass ? 'text' : 'password'}
-                                value={password}
-                                onChange={handlePasswordChange}
-                                placeholder="••••••••"
-                                className="input-base pl-11 pr-11"
-                                autoComplete="current-password"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPass(p => !p)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
-                                style={{ color: '#475569' }}
-                                tabIndex={-1}
-                            >
-                                {showPass ? <FiEyeOff size={15} /> : <FiEye size={15} />}
-                            </button>
                         </div>
                     </div>
 
@@ -171,21 +120,20 @@ const Login = () => {
                         {loading ? (
                             <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         ) : (
-                            <span className="flex items-center gap-2">Login to Dashboard <FiArrowRight /></span>
+                            <span className="flex items-center gap-2">Send OTP <FiArrowRight /></span>
                         )}
                     </button>
                 </form>
 
-                <p className="text-center text-sm mt-8" style={{ color: '#475569' }}>
-                    Don't have an account?{' '}
-                    <Link to="/signup" className="font-medium transition-colors hover:text-white"
-                        style={{ color: '#06B6D4' }}>
-                        Create Account
+                <div className="mt-8 text-center">
+                    <Link to="/login" className="inline-flex items-center gap-2 text-sm font-medium transition-colors hover:text-white"
+                        style={{ color: '#94A3B8' }}>
+                        <FiArrowLeft /> Back to Login
                     </Link>
-                </p>
+                </div>
             </motion.div>
         </div>
     );
 };
 
-export default Login;
+export default ForgotPassword;

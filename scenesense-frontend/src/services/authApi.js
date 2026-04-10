@@ -53,6 +53,22 @@ export async function login(payload) {
     return request('/auth/login', payload);
 }
 
+/**
+ * Request a password reset OTP.
+ * @param {{ email }} payload
+ */
+export async function forgotPassword(payload) {
+    return request('/auth/forgot-password', payload);
+}
+
+/**
+ * Reset password using OTP.
+ * @param {{ email, otp, new_password, confirm_password }} payload
+ */
+export async function resetPassword(payload) {
+    return request('/auth/reset-password', payload);
+}
+
 /** Persist JWT + basic user info to localStorage. */
 export function saveSession(token, user) {
     localStorage.setItem('ss_token', token);

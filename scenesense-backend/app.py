@@ -23,7 +23,13 @@ def create_app() -> Flask:
     app.config["AUDIO_FOLDER"] = config.AUDIO_FOLDER
 
     # ── CORS ─────────────────────────────────────────────────────────
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    ALLOWED_ORIGINS = [
+        "https://scene-sense-ai.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:4173",
+        "http://127.0.0.1:5173",
+    ]
+    CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}}, supports_credentials=True)
 
     # ── Blueprints ───────────────────────────────────────────────────
     app.register_blueprint(upload_bp)

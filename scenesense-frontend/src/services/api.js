@@ -1,13 +1,16 @@
 /**
  * services/api.js
  * Centralised Axios wrapper. All backend calls go through here.
- * Vite proxies /upload /caption /translate /voice /history → Flask:5000.
+ * In development, Vite proxies /upload /caption /translate /voice /history → Flask:5000.
+ * In production (Vercel), VITE_API_URL must point to the deployed backend.
  */
 
 import axios from 'axios'
 
+const BASE_URL = import.meta.env.VITE_API_URL || ''
+
 const api = axios.create({
-    baseURL: '/',
+    baseURL: BASE_URL,
     timeout: 120_000, // models can take time on first load
 })
 

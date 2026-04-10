@@ -6,4 +6,8 @@ venv/
 upload_result.json
 sample.jpg
 models/
-static/audio/\nstatic/uploads/
+static/audio/
+static/uploads/
+*.pyc
+*.pyo
+.vscode/

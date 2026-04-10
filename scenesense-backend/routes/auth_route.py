@@ -15,7 +15,7 @@ from flask import Blueprint, jsonify, request
 
 import config
 from models import user_model
-from services.email_service import send_otp_email
+from services.email_service import send_otp_email, send_reset_otp_email
 
 logger = logging.getLogger(__name__)
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -196,3 +196,64 @@ def login():
             },
         }
     )
+
+
+# ── POST /auth/forgot-password ────────────────────────────────────────
+
+
+@auth_bp.post("/forgot-password")
+def forgot_password():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+
+    if not email:
+        return _err("Email is required")
+
+    user = user_model.find_by_email(email)
+    if not user:
+        # Security: don't reveal if user exists or not
+        return _ok({"message": "If an account exists, a reset OTP has been sent."})
+
+    new_otp = user_model.save_reset_otp(email)
+    if not new_otp:
+        return _err("Failed to generate OTP. Please try again.")
+
+    try:
+        send_reset_otp_email(email, user.get("full_name", "User"), new_otp)
+    except RuntimeError as exc:
+        logger.error("Email send error during password reset: %s", exc)
+        return _err("Failed to send reset email. Please check SMTP configuration.")
+
+    return _ok({"message": "If an account exists, a reset OTP has been sent."})
+
+
+# ── POST /auth/reset-password ─────────────────────────────────────────
+
+
+@auth_bp.post("/reset-password")
+def reset_password():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    otp = (data.get("otp") or "").strip()
+    new_password = data.get("new_password") or ""
+    confirm_password = data.get("confirm_password") or ""
+
+    if not email or not otp or not new_password or not confirm_password:
+        return _err("Email, OTP, and new password fields are required")
+
+    if len(new_password) < 6:
+        return _err("Password must be at least 6 characters")
+    if new_password != confirm_password:
+        return _err("Passwords do not match")
+
+    ok, reason = user_model.verify_reset_otp(email, otp)
+    if not ok:
+        return _err(reason)
+
+    pw_hash = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+    
+    success = user_model.reset_password(email, pw_hash)
+    if not success:
+        return _err("Failed to reset password. Please try again.")
+
+    return _ok({"message": "Password successfully reset. You can now log in."})

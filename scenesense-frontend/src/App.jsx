@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
 import VerifyOtp from './pages/VerifyOtp';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import ParticleBackground from './components/ParticleBackground';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 
@@ -60,6 +62,8 @@ function AppShell() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/verify-otp" element={<VerifyOtp />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/app" element={<Home />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
