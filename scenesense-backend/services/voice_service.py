@@ -17,9 +17,26 @@ logger = logging.getLogger(__name__)
 
 # gTTS language code mapping
 _LANG_MAP: dict[str, str] = {
-    "en": "en",
-    "hi": "hi",
-    "te": "te",
+    "en": "en",        # English
+    "zh": "zh-CN",     # Chinese (Mandarin)
+    "hi": "hi",        # Hindi
+    "es": "es",        # Spanish
+    "fr": "fr",        # French
+    "ar": "ar",        # Arabic
+    "bn": "bn",        # Bengali
+    "pt": "pt",        # Portuguese
+    "ru": "ru",        # Russian
+    "ur": "ur",        # Urdu
+    "id": "id",        # Indonesian
+    "de": "de",        # German
+    "ja": "ja",        # Japanese
+    "sw": "sw",        # Swahili
+    "mr": "mr",        # Marathi
+    "te": "te",        # Telugu
+    "tr": "tr",        # Turkish
+    "ta": "ta",        # Tamil
+    "ko": "ko",        # Korean
+    "vi": "vi",        # Vietnamese
 }
 
 
