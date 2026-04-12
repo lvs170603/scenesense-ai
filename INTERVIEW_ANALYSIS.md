@@ -655,3 +655,197 @@ VITE_API_URL=http://localhost:5000
 
 > **తెలుగు Summary:**
 > "SceneSense AI అనేది ఒక AI web application. User image upload చేస్తే, BLIP model caption generate చేస్తుంది. NLLB-200 model దాన్ని 20 languages లో translate చేస్తుంది. gTTS voice గా మారుస్తుంది. MongoDB లో history store అవుతుంది. Login కి bcrypt password hashing, JWT tokens, మరియు OTP email verification use చేశాను. AI models Singleton pattern తో lazy load అవుతాయి — memory save అవుతుంది."
+
+---
+
+## 14. 🎓 Final Year Viva — Complete Question Bank (50 Questions)
+
+> Examiner-level viva questions across difficulty tiers with short, confident answers ideal for oral presentation.
+
+---
+
+### 📘 BASIC QUESTIONS (10)
+
+**B1. What is SceneSense AI? Explain your project in one paragraph.**
+> SceneSense AI is a full-stack AI-powered web application that automatically analyses an uploaded image, generates a descriptive caption using BLIP, translates that caption into any of 20 global languages using NLLB-200, and synthesises natural-sounding speech using Microsoft Azure Neural voices via edge-tts. Users manage accounts with JWT authentication, and all generations are stored in MongoDB for future reference.
+
+**B2. What is the main problem your project solves?**
+> Most AI captioning tools only output English captions, creating a barrier for non-English speakers and visually impaired users. SceneSense AI solves this by generating captions and voice output in 20 languages, making visual content accessible to a global multilingual audience.
+
+**B3. What is image captioning?**
+> Image captioning is automatically generating a natural language text description of the visual content in an image — combining Computer Vision (understanding the image) and NLP (forming meaningful sentences). Example: a photo of a dog in a park outputs "a dog running on green grass."
+
+**B4. What are the key features of your project?**
+> (1) AI Image Captioning — BLIP with Simple, Detailed, and Story modes. (2) Multilingual Translation — 20 languages via NLLB-200. (3) Neural Voice Synthesis — Microsoft Azure edge-tts. (4) JWT + OTP Authentication. (5) MongoDB History Tracking. (6) Recent Generations Sidebar with inline playback and reload.
+
+**B5. What technologies did you use for the frontend?**
+> React.js (Vite), Framer Motion for animations, Axios for HTTP, React Router DOM for routing, react-icons, and Vanilla CSS for glassmorphism design.
+
+**B6. What technologies did you use for the backend?**
+> Python Flask, HuggingFace Transformers (BLIP + NLLB-200), edge-tts for neural speech, PyMongo for MongoDB, Flask-CORS, PyJWT + bcrypt for auth, and Gunicorn as the production server.
+
+**B7. Why did you choose MongoDB?**
+> History records are flexible JSON documents with varying fields. MongoDB's schema-less document structure handles this naturally, integrates cleanly with Python via PyMongo, and scales horizontally for cloud deployments.
+
+**B8. How many languages does your project support?**
+> 20 languages: English, Chinese, Hindi, Spanish, French, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Swahili, Marathi, Telugu, Turkish, Tamil, Korean, and Vietnamese.
+
+**B9. What is the user workflow?**
+> Upload image → Select caption mode → Select target language → Click "Run Inference Pipeline" → View caption, translated text, and hear audio → Browse past results in Recent Generations sidebar.
+
+**B10. What is the significance of voice generation?**
+> Voice makes the app accessible for visually impaired users. By synthesising speech in the same language as the translation, it delivers audio-first, language-native information — dramatically improving usability for low-literacy or visually challenged users globally.
+
+---
+
+### 📗 INTERMEDIATE QUESTIONS (10)
+
+**I1. Explain the complete pipeline of your application.**
+> (1) POST /upload → image saved. (2) POST /caption → BLIP generates English caption. (3) POST /translate → NLLB-200 translates. (4) POST /voice → edge-tts maps language to Azure Neural voice, saves MP3. (5) POST /history → all outputs saved to MongoDB. (6) React renders caption, translation, AudioPlayer.
+
+**I2. What is the 3-tier architecture of your app?**
+> Presentation Layer (React + Vite), Application Layer (Flask REST API + AI services), and Data Layer (MongoDB Atlas). Frontend and backend are fully decoupled, communicating via JSON REST APIs — allowing independent deployment.
+
+**I3. How does JWT authentication work?**
+> On login, Flask verifies bcrypt password and issues a signed JWT. Frontend stores it in localStorage and attaches it as "Authorization: Bearer token" on every protected request. Backend decodes and verifies the signature using PyJWT — no database query needed per request (stateless auth).
+
+**I4. How is history implemented?**
+> After all 4 pipeline steps succeed, the frontend sends POST /history with all outputs. Flask calls insert_history() which writes a BSON document to MongoDB. GET /history returns the 20 most recent records sorted by timestamp descending.
+
+**I5. How does the Recent Generations sidebar work?**
+> HistorySidebar.jsx slides in via Framer Motion when isSidebarOpen becomes true. It fetches history from MongoDB and renders cards with thumbnail, language badge, and action buttons. "Load into Workspace" restores outputs to the main UI. Trash icon shows a confirmation modal before calling DELETE /history/:id.
+
+**I6. What are the three caption modes?**
+> Simple: BLIP alone — short factual sentence (fastest). Detailed: BLIP base caption then GPT-2 expands into a rich paragraph. Story: BLIP base caption then GPT-2 generates a narrative story with a title.
+
+**I7. How does image upload work?**
+> Frontend sends image as multipart/form-data via Axios. Flask validates file extension (allowlist), generates UUID-based filename to avoid conflicts, saves to static/uploads/, returns filename as reference key for downstream pipeline calls.
+
+**I8. How did you handle CORS?**
+> Flask-CORS is configured with explicit allowed origins (localhost:5173 in dev, Vercel domain in prod) and supports_credentials=True to pass the JWT Authorization header properly across origins.
+
+**I9. How is audio served to the frontend?**
+> Flask saves MP3 to static/audio/<uuid>.mp3 and returns the relative URL. Flask serves it via its built-in static file server. The React AudioPlayer sets this as the audio src and the browser streams the file directly.
+
+**I10. Why Axios over native Fetch API?**
+> Axios provides: automatic JSON parsing, global request interceptors for JWT headers, onUploadProgress for the upload progress bar, and cleaner 4xx/5xx error handling — all requiring significant boilerplate with native fetch.
+
+---
+
+### 📕 TECHNICAL QUESTIONS (15)
+
+**T1. What is BLIP and how does it work?**
+> BLIP (Bootstrapping Language-Image Pre-training) by Salesforce combines a Vision Transformer (ViT) encoder that extracts visual feature vectors, and a Text Transformer decoder that generates caption tokens conditioned on those features. It predicts the most probable next word sequentially.
+
+**T2. Difference between BLIP-base and BLIP-large?**
+> BLIP-large (ViT-L, ~900M parameters) — more accurate but 10-15s inference. BLIP-base (ViT-B, ~220M parameters) — much faster at 1-2s with sufficient accuracy. I switched to base to eliminate latency.
+
+**T3. What is NLLB-200? Why choose it over Google Translate?**
+> No Language Left Behind — Meta's open-source multilingual seq2seq model for 200 languages. Advantages: completely free, runs locally (no API keys), covers all 20 target languages including low-resource Swahili and Marathi, uses precise BCP-47 dialect codes.
+
+**T4. What is Greedy Decoding vs. Beam Search?**
+> Beam Search explores multiple token paths simultaneously — higher quality but 3-4x slower. Greedy Decoding (num_beams=1) picks the highest-probability token immediately — much faster. I use Greedy for BLIP inference to maximise speed with minimal quality loss.
+
+**T5. What is edge-tts and how does it synthesise speech?**
+> edge-tts sends text and a voice identifier (e.g., fr-FR-DeniseNeural) to Microsoft Azure via WebSocket, receives an MP3 audio stream, and the async Communicate.save() coroutine writes it to a local file. I wrap it in asyncio.run() to call from synchronous Flask routes.
+
+**T6. Neural voice vs. traditional TTS?**
+> Traditional TTS stitches pre-recorded phoneme fragments — robotic sound. Neural voices are trained using deep neural acoustic models on large human speech datasets, producing near-human quality with correct prosody, rhythm, and intonation.
+
+**T7. How do you map 20 languages to correct Azure voices?**
+> voice_service.py has _LANG_MAP dict: ISO code -> Azure Neural voice name. On each request: voice = _LANG_MAP.get(language, "en-US-AriaNeural"). The English fallback ensures graceful degradation on unknown codes.
+
+**T8. How does NLLB-200 know which language to translate to?**
+> NLLB-200 uses forced_bos_token_id — passing tokenizer.convert_tokens_to_ids("fra_Latn") forces the decoder's first token to the BCP-47 language tag, conditioning the entire translation on the target language.
+
+**T9. What is JWT? How is it structured?**
+> JSON Web Token — three-part signed string: Header.Payload.Signature. Payload contains sub (user_id), email, and exp (expiry). Signed with HS256. Clients attach as Bearer token; server verifies signature without a database lookup — stateless auth.
+
+**T10. How did you fix the language restriction bug?**
+> voice_route.py had VALID_LANGUAGES = {"en", "hi", "te"} hardcoded — a gTTS legacy. The API gate rejected all other languages before reaching the engine. Fixed by: VALID_LANGUAGES = set(_LANG_MAP.keys()) — dynamically derived from the actual voice mapping dictionary.
+
+**T11. How do you handle model loading performance?**
+> Singleton + Lazy Loading — __new__() returns the same instance always. _load() checks "if self._model is not None: return", initialising only on the first request. After that, the model stays in memory for all subsequent requests.
+
+**T12. What is multipart/form-data?**
+> An HTTP encoding type for binary file uploads. It splits the HTTP body into multiple parts separated by a boundary string, each with its own Content-Type. Standard for image/file uploads. Flask reads it via request.files.get("file").
+
+**T13. What is torch.no_grad() and why is it important?**
+> Disables gradient computation during inference (no backpropagation needed). Saves 2-3x memory and speeds inference by 15-30%. Critical best practice for any production PyTorch inference code.
+
+**T14. How did you ensure all 20 languages work end-to-end?**
+> translation_service.py has language_map for all 20 ISO -> NLLB BCP-47 codes. voice_service.py has _LANG_MAP for all 20 ISO -> Azure Neural voice names. Both derive from the same source — adding a new language requires one entry in each dict.
+
+**T15. What is asyncio.run() and why does voice service need it?**
+> edge-tts is an async library — its coroutine must run inside an event loop. Flask routes are synchronous. asyncio.run() creates a temporary event loop, runs the async coroutine to completion, then destroys it — bridging sync Flask with async edge-tts cleanly.
+
+---
+
+### 📙 ADVANCED QUESTIONS (10)
+
+**A1. Can your app scale to 1000 concurrent users?**
+> Not in current form — BLIP and NLLB run synchronously on one server. To scale: (1) GPU instances for sub-second inference, (2) Celery + Redis async task queue, (3) multiple Gunicorn workers / Kubernetes pods, (4) dedicated TorchServe model microservice, (5) CDN for static file caching.
+
+**A2. What are the security vulnerabilities and fixes?**
+> JWT in localStorage -> use HttpOnly cookies. File upload with extension check only -> validate file magic bytes. No rate limiting -> add Flask-Limiter per IP. MongoClient per-request -> single long-lived client with connection pool. CORS -> restrict to known origins only.
+
+**A3. How would you do zero-downtime model version updates?**
+> Blue-Green Deployment — two identical environments. Green gets the new model; load balancer switches traffic from Blue to Green after validation. DVC tracks model weights. Rollback = switch back to Blue instantly.
+
+**A4. How would you manage growing audio file storage?**
+> (1) MongoDB TTL index to auto-delete old records. (2) Cron job removes orphan audio files not referenced in MongoDB. (3) AWS S3 with lifecycle auto-expiry policies. (4) Hash text+language to serve cached audio for identical requests.
+
+**A5. What would you do differently if rebuilding?**
+> FastAPI (native async + auto OpenAPI docs), React Query (cached/auto-refetching data fetching), HttpOnly cookies for JWT, separate TorchServe model microservice, WebSocket /progress endpoint for real-time pipeline step updates.
+
+**A6. How would you add real-time caption progress?**
+> Server-Sent Events (SSE) — Flask streams JSON progress events via a generator Response. Frontend connects via EventSource browser API, receiving step updates (Uploading -> Captioning -> Translating -> Synthesising). More efficient than WebSockets for one-directional streaming.
+
+**A7. How would you implement RBAC?**
+> Add role field ("user" | "admin") to MongoDB user documents. Include role in JWT payload. @require_role("admin") decorator checks role before allowing access. Admins access admin-only endpoints; users only see their own history filtered by user_id.
+
+**A8. What happens if MongoDB is unavailable?**
+> History save is wrapped in try/except in Home.jsx — the generation pipeline continues without crashing. Users still get caption and audio. Improvement: Redis retry queue for failed writes + circuit breaker to show user-friendly banner when DB is down.
+
+**A9. How would you add caching for repeated images?**
+> Compute SHA-256 hash of image binary -> check Redis cache before BLIP inference. If cached caption exists, return in milliseconds. Similarly cache (caption, target_language) -> translated_text pairs. This is memoization at the inference layer.
+
+**A10. How would you A/B test BLIP-base vs BLIP-large?**
+> Add ?model=base|large param to /caption. Log model variant + latency in MongoDB. Compare quality ratings, latency, accuracy metrics. Use statistical significance testing (two-proportion z-test) before permanent deployment.
+
+---
+
+### 📒 TRICKY QUESTIONS (5)
+
+**TR1. If BLIP generates imperfect English, does translation quality suffer?**
+> Yes — NLLB-200 performs best on clean English. BLIP sometimes generates incomplete captions like "woman sitting bench park". Fix: add a Grammar Error Correction (GEC) step between BLIP output and NLLB input to normalise captions before translation.
+
+**TR2. Why is your system not truly "real-time" even though it feels fast?**
+> The pipeline runs 4 sequential blocking operations (upload I/O, BLIP inference, NLLB inference, edge-tts network I/O). It feels responsive due to UX design — step-by-step progress indicators and Framer Motion animations. True real-time requires streaming token-by-token output like ChatGPT.
+
+**TR3. Your _get_collection() creates a new MongoClient on every call — is this a problem?**
+> Yes — a connection leak anti-pattern. Fix: instantiate a single MongoClient at module load time (outside any function) and reuse it. PyMongo manages an internal thread-safe connection pool transparently.
+
+**TR4. Can GPT-2 generate harmful content in Story mode?**
+> Yes — GPT-2 is unconstrained. Mitigations: (1) toxicity classifier filter on output before returning to user, (2) prompt engineering guardrails ("Write a child-safe story about..."), (3) user reporting mechanism for manual review of flagged outputs.
+
+**TR5. What happens if use_fast=True is omitted in the NLLB tokenizer?**
+> HuggingFace silently falls back to the pure Python slow tokenizer. The Rust-based fast tokenizer is up to 100x faster for complex scripts (Arabic, Chinese, Devanagari). Omitting it causes a subtle, invisible performance regression with no visible error.
+
+---
+
+## 🌟 BONUS — 5 One-Line Power Answers
+
+1. **"SceneSense AI transforms any image into accessible, multilingual, audio-augmented information — making visual content language-agnostic."**
+
+2. **"By replacing gTTS with Microsoft Azure Neural voices via edge-tts, we elevated voice quality from robotic phoneme-stitching to near-human neural speech synthesis across 20 languages."**
+
+3. **"Switching from BLIP-large to BLIP-base with greedy decoding reduced caption latency by over 80% with negligible accuracy loss — a classic engineering trade-off of performance vs. precision."**
+
+4. **"The singleton lazy-loading pattern ensures our AI models are loaded exactly once and kept in memory — making every request after the first execute in under 2 seconds."**
+
+5. **"Our history architecture implements optimistic UI deletion — the card disappears instantly on the frontend while the database DELETE runs asynchronously, making the interface feel incredibly snappy even on slow connections."**
+
+---
+
+*Best of luck with your viva! Speak with confidence — you built something genuinely impressive.* 🎓
