@@ -9,7 +9,6 @@ import logging
 from flask import Blueprint, request, jsonify
 
 from services.translation_service import translation_service, _MODEL_MAP
-from models.history_model import insert_history
 
 logger = logging.getLogger(__name__)
 translate_bp = Blueprint("translate", __name__)
@@ -48,25 +47,9 @@ def translate_caption():
     try:
         translated = translation_service.translate(text, target_lang=language)  # type: ignore[arg-type]
 
-        # Persist to MongoDB if caller supplied extra context
-        history_id = None
-        image_name = body.get("image_name", "")
-        original_caption = body.get("original_caption", text)
-        mode = body.get("mode", "simple")
-
-        if image_name:
-            history_id = insert_history(
-                image_name=image_name,
-                caption=original_caption,
-                translated_caption=translated,
-                language=language,
-                mode=mode,
-            )
-
         return jsonify({
             "translated_text": translated,
             "language": language,
-            "history_id": history_id,
         }), 200
     except Exception as exc:
         logger.exception("Translation failed: %s", exc)

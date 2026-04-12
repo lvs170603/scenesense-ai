@@ -92,7 +92,7 @@ class CaptionService:
 
         with torch.no_grad():
             out = self._model.generate(  # type: ignore[union-attr]
-                **inputs, max_new_tokens=60
+                **inputs, max_new_tokens=60, num_beams=1, do_sample=False
             )
 
         base_caption: str = self._processor.decode(out[0], skip_special_tokens=True)  # type: ignore[misc]

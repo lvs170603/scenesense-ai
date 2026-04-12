@@ -33,6 +33,7 @@ export default function LanguageSelector({ value, onChange, disabled }) {
     const { theme } = useTheme()
     const isLight = theme === 'light'
     const [isOpen, setIsOpen] = React.useState(false)
+    const [openUpwards, setOpenUpwards] = React.useState(false)
     const dropdownRef = React.useRef(null)
 
     React.useEffect(() => {
@@ -45,15 +46,22 @@ export default function LanguageSelector({ value, onChange, disabled }) {
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
+    const toggleDropdown = () => {
+        if (!disabled) {
+            setIsOpen(!isOpen)
+        }
+    }
+
     const selectedLabel = SUPPORTED_LANGS.find(l => l.code === value)?.label || 'Select Language'
 
     const containerClass = isLight 
         ? 'w-full bg-white border-slate-300 text-slate-800 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 flex justify-between items-center p-3 cursor-pointer border shadow-sm transition-colors'
         : 'w-full bg-[rgba(15,23,42,0.8)] border-[rgba(255,255,255,0.08)] text-slate-200 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 flex justify-between items-center p-3 cursor-pointer border shadow-sm transition-colors object-cover'
 
+    // Drop-up styles applied permanently (bottom-full mb-2)
     const dropdownMenuClass = isLight
-        ? 'absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto py-1'
-        : 'absolute z-50 w-full mt-2 bg-slate-800 border border-slate-700/50 rounded-xl shadow-2xl max-h-60 overflow-y-auto py-1'
+        ? `absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto py-1 bottom-full mb-2`
+        : `absolute z-50 w-full bg-slate-800 border border-slate-700/50 rounded-xl shadow-2xl max-h-60 overflow-y-auto py-1 bottom-full mb-2`
 
     const optionClass = isLight
         ? 'px-4 py-2.5 text-sm cursor-pointer hover:bg-slate-100 transition-colors flex items-center justify-between'
@@ -64,7 +72,7 @@ export default function LanguageSelector({ value, onChange, disabled }) {
             <button 
                 type="button"
                 className={`${containerClass} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onClick={() => !disabled && setIsOpen(!isOpen)}
+                onClick={toggleDropdown}
                 disabled={disabled}
             >
                 <div className="flex items-center gap-3">

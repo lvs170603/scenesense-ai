@@ -63,7 +63,7 @@ OTP_EXPIRY_MINUTES: int = int(os.getenv("OTP_EXPIRY_MINUTES", 5))
 # ──────────────────────────────────────────────
 # Model identifiers
 # ──────────────────────────────────────────────
-BLIP_MODEL_ID: str = "Salesforce/blip-image-captioning-large"
+BLIP_MODEL_ID: str = "Salesforce/blip-image-captioning-base"
 TRANSLATION_MODEL_EN_HI: str = "Helsinki-NLP/opus-mt-en-hi"
 TRANSLATION_MODEL_EN_TE: str = "Helsinki-NLP/opus-mt-en-mul"   # multilingual covers Telugu
 

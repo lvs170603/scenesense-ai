@@ -19,9 +19,11 @@ import {
     generateCaption,
     translateCaption,
     generateVoice,
+    saveHistory,
 } from '../services/api.js'
 
 import Navbar from '../components/Navbar.jsx'
+import HistorySidebar from '../components/HistorySidebar.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 
 const STEP = {
@@ -45,6 +47,7 @@ export default function Home() {
     const [mode, setMode] = useState('simple')
     const [language, setLanguage] = useState('en')
     const [autoAudio, setAutoAudio] = useState(true)
+    const [isSidebarOpen, setSidebarOpen] = useState(false)
 
     const [step, setStep] = useState(STEP.IDLE)
     const [uploadProgress, setUploadProgress] = useState(0)
@@ -87,6 +90,21 @@ export default function Home() {
         setUploadProgress(0)
     }
 
+    const handleLoadHistory = useCallback((item) => {
+        handleClear()
+        setSavedFilename(item.image_name)
+        setPreviewUrl(item.image_name ? `/static/uploads/${item.image_name}` : null)
+        setCaption(item.caption)
+        setTranslatedCaption(item.translated_caption)
+        setLanguage(item.language)
+        setMode(item.mode)
+        if (item.audio_url) {
+            setAudioUrl(item.audio_url)
+            // Extract filename from URL (e.g. /static/audio/audio_123.mp3)
+            setAudioFilename(item.audio_url.split('/').pop())
+        }
+    }, [])
+
     // ── Main pipeline ────────────────────────────────────────────────
     const handleGenerate = async () => {
         if (!file) return
@@ -109,24 +127,38 @@ export default function Home() {
             const engCaption = captionData.caption
             setCaption(engCaption)
 
-            // 3. History Save & Translate
+            // 3. Translate
             setStep(STEP.TRANSLATING)
             const translateData = await translateCaption({
                 text: engCaption,
                 language: language,
-                image_name: filename,
-                original_caption: engCaption,
                 mode,
             })
             const finalText = translateData.translated_text || engCaption
             setTranslatedCaption(finalText)
 
             // 4. Voice (Optional)
+            let finalAudioUrl = null;
             if (autoAudio) {
                 setStep(STEP.VOICING)
                 const voiceData = await generateVoice(finalText, language)
                 setAudioUrl(voiceData.audio_url)
                 setAudioFilename(voiceData.filename)
+                finalAudioUrl = voiceData.audio_url
+            }
+
+            // 5. Save History End-to-End
+            try {
+                await saveHistory({
+                    image_name: filename,
+                    caption: engCaption,
+                    translated_caption: finalText,
+                    language: language,
+                    mode: mode,
+                    audio_url: finalAudioUrl
+                })
+            } catch (historyErr) {
+                console.warn("Could not save history record:", historyErr)
             }
 
         } catch (err) {
@@ -152,6 +184,11 @@ export default function Home() {
     return (
         <div className="min-h-screen relative z-10 flex flex-col">
             <Navbar />
+            <HistorySidebar 
+                isOpen={isSidebarOpen} 
+                onClose={() => setSidebarOpen(false)} 
+                onLoadHistory={handleLoadHistory} 
+            />
 
             <div className="px-4 py-8 md:py-12 max-w-[1280px] mx-auto w-full flex-1">
                 
@@ -188,12 +225,12 @@ export default function Home() {
                         >
                             <FiTrash2 size={15} /> Clear Workspace
                         </button>
-                        <Link
-                            to="/history"
+                        <button
+                            onClick={() => setSidebarOpen(true)}
                             className="btn-secondary inline-flex items-center gap-2 text-sm px-4 py-2 bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20 hover:border-indigo-500/40"
                         >
                             <FiClock size={15} /> Recent Generations
-                        </Link>
+                        </button>
                     </div>
                 </motion.div>
 

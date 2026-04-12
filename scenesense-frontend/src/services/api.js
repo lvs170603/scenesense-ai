@@ -87,4 +87,22 @@ export function fetchHistory(params = {}) {
     return api.get('/history', { params }).then((r) => r.data)
 }
 
+/**
+ * Save completely generated pipeline history explicitly.
+ * @param {{ image_name: string, caption: string, translated_caption: string, language: string, mode: string, audio_url?: string }} payload
+ * @returns {Promise<{ message: string, history_id: string }>}
+ */
+export function saveHistory(payload) {
+    return api.post('/history', payload).then((r) => r.data)
+}
+
+/**
+ * Delete a specific record from history.
+ * @param {string} historyId
+ * @returns {Promise<{ message: string }>}
+ */
+export function deleteHistory(historyId) {
+    return api.delete(`/history/${historyId}`).then((r) => r.data)
+}
+
 export default api

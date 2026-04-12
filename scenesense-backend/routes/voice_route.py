@@ -8,12 +8,12 @@ from __future__ import annotations
 import logging
 from flask import Blueprint, request, jsonify
 
-from services.voice_service import voice_service
+from services.voice_service import voice_service, _LANG_MAP
 
 logger = logging.getLogger(__name__)
 voice_bp = Blueprint("voice", __name__)
 
-VALID_LANGUAGES = {"en", "hi", "te"}
+VALID_LANGUAGES = set(_LANG_MAP.keys())
 
 
 @voice_bp.post("/voice")

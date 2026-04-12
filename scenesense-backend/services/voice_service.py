@@ -8,40 +8,40 @@ from __future__ import annotations
 import logging
 import os
 import uuid
-
-from gtts import gTTS
-
 import config
+
+import asyncio
+import edge_tts
 
 logger = logging.getLogger(__name__)
 
-# gTTS language code mapping
+# Microsoft Edge TTS (Azure Neural) language voice mapping
 _LANG_MAP: dict[str, str] = {
-    "en": "en",        # English
-    "zh": "zh-CN",     # Chinese (Mandarin)
-    "hi": "hi",        # Hindi
-    "es": "es",        # Spanish
-    "fr": "fr",        # French
-    "ar": "ar",        # Arabic
-    "bn": "bn",        # Bengali
-    "pt": "pt",        # Portuguese
-    "ru": "ru",        # Russian
-    "ur": "ur",        # Urdu
-    "id": "id",        # Indonesian
-    "de": "de",        # German
-    "ja": "ja",        # Japanese
-    "sw": "sw",        # Swahili
-    "mr": "mr",        # Marathi
-    "te": "te",        # Telugu
-    "tr": "tr",        # Turkish
-    "ta": "ta",        # Tamil
-    "ko": "ko",        # Korean
-    "vi": "vi",        # Vietnamese
+    "en": "en-US-AriaNeural",      # English
+    "zh": "zh-CN-XiaoxiaoNeural",  # Chinese (Mandarin)
+    "hi": "hi-IN-SwaraNeural",     # Hindi
+    "es": "es-ES-ElviraNeural",    # Spanish
+    "fr": "fr-FR-DeniseNeural",    # French
+    "ar": "ar-SA-ZariyahNeural",   # Arabic
+    "bn": "bn-IN-TanishaaNeural",  # Bengali
+    "pt": "pt-BR-FranciscaNeural", # Portuguese
+    "ru": "ru-RU-SvetlanaNeural",  # Russian
+    "ur": "ur-PK-UzmaNeural",      # Urdu
+    "id": "id-ID-GadisNeural",     # Indonesian
+    "de": "de-DE-KatjaNeural",     # German
+    "ja": "ja-JP-NanamiNeural",    # Japanese
+    "sw": "sw-KE-ZuriNeural",      # Swahili
+    "mr": "mr-IN-AarohiNeural",    # Marathi
+    "te": "te-IN-ShrutiNeural",    # Telugu
+    "tr": "tr-TR-EmelNeural",      # Turkish
+    "ta": "ta-IN-PallaviNeural",   # Tamil
+    "ko": "ko-KR-SunHiNeural",     # Korean
+    "vi": "vi-VN-HoaiMyNeural",    # Vietnamese
 }
 
 
 class VoiceService:
-    """Wraps gTTS to generate an MP3 and return its web-accessible path."""
+    """Wraps Edge TTS (Azure Neural) to generate an MP3 and return its web-accessible path."""
 
     def generate(self, text: str, language: str = "en") -> dict[str, str]:
         """
@@ -50,21 +50,26 @@ class VoiceService:
         text:
             Text to convert to speech.
         language:
-            ISO language code – ``"en"``, ``"hi"``, or ``"te"``.
+            ISO language code.
 
         Returns
         -------
         dict with keys:
-            ``filename`` – basename of the MP3 file stored in ``static/audio/``.
+            ``filename`` – basename of the MP3 file stored in static/audio/.
             ``url``      – relative URL path usable by the frontend.
         """
-        lang_code = _LANG_MAP.get(language, "en")
+        voice = _LANG_MAP.get(language, "en-US-AriaNeural")
         filename = f"audio_{uuid.uuid4().hex}.mp3"
         filepath = os.path.join(config.AUDIO_FOLDER, filename)
 
-        tts = gTTS(text=text, lang=lang_code, slow=False)
-        tts.save(filepath)
-        logger.info("Audio saved: %s (lang=%s)", filepath, lang_code)
+        # Run async edge-tts communication in a synchronous wrapper
+        async def _synthesize():
+            communicate = edge_tts.Communicate(text, voice)
+            await communicate.save(filepath)
+
+        asyncio.run(_synthesize())
+
+        logger.info("Audio saved using Edge TTS: %s (voice=%s)", filepath, voice)
 
         return {
             "filename": filename,
