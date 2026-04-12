@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCamera, FiX } from 'react-icons/fi';
+import { FiCamera, FiX, FiLogOut } from 'react-icons/fi';
 import { useTheme } from '../../context/ThemeContext';
+import { getToken, clearSession } from '../../services/authApi';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const navigate = useNavigate();
+    const token = getToken();
+
+    const handleLogout = () => {
+        clearSession();
+        navigate('/');
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -95,12 +104,25 @@ const Navbar = () => {
 
                         <div className={`h-5 w-px ${isLight ? 'bg-slate-300' : 'bg-white/10'}`} />
 
-                        <Link to="/login" className={`text-sm font-medium transition-colors ${isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-300 hover:text-white'}`}>
-                            Log in
-                        </Link>
-                        <Link to="/signup" className="btn-primary py-2.5 px-6 text-sm">
-                            Sign Up Free
-                        </Link>
+                        {!token ? (
+                            <>
+                                <Link to="/login" className={`text-sm font-medium transition-colors ${isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-300 hover:text-white'}`}>
+                                    Log in
+                                </Link>
+                                <Link to="/app" className="btn-primary py-2.5 px-6 text-sm">
+                                    Get Started →
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link to="/app" className={`text-sm font-medium transition-colors ${isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-300 hover:text-white'}`}>
+                                    Workspace
+                                </Link>
+                                <button onClick={handleLogout} className="btn-secondary py-2.5 px-6 text-sm flex items-center gap-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30">
+                                    <FiLogOut size={15} /> Logout
+                                </button>
+                            </>
+                        )}
                     </div>
 
                     {/* Mobile Menu Toggle */}
@@ -160,12 +182,25 @@ const Navbar = () => {
                         </div>
 
                         <div className="mt-auto space-y-4 pt-8 border-t border-white/10">
-                            <Link to="/login" className="block w-full text-center py-3 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5 transition-colors">
-                                Log in
-                            </Link>
-                            <Link to="/signup" className="btn-primary block w-full text-center py-3">
-                                Sign Up Free
-                            </Link>
+                            {!token ? (
+                                <>
+                                    <Link to="/login" className="block w-full text-center py-3 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5 transition-colors">
+                                        Log in
+                                    </Link>
+                                    <Link to="/app" className="btn-primary block w-full text-center py-3">
+                                        Get Started →
+                                    </Link>
+                                </>
+                            ) : (
+                                <>
+                                    <Link to="/app" className="block w-full text-center py-3 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5 transition-colors">
+                                        Workspace
+                                    </Link>
+                                    <button onClick={() => { setMobileMenuOpen(false); handleLogout(); }} className="btn-secondary block w-full flex items-center justify-center gap-2 text-red-500 py-3">
+                                        <FiLogOut size={18} /> Logout
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </motion.div>
                 )}

@@ -25,6 +25,7 @@ import {
 import Navbar from '../components/Navbar.jsx'
 import HistorySidebar from '../components/HistorySidebar.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
+import { getToken } from '../services/authApi.js'
 
 const STEP = {
     IDLE: 'idle',
@@ -63,6 +64,13 @@ export default function Home() {
     const isLight = theme === 'light'
 
     const busy = step !== STEP.IDLE
+
+    // Freemium limits
+    const token = getToken()
+    const guestAttempts = parseInt(localStorage.getItem('ss_guest_attempts') || '0')
+    const maxGuestAttempts = 5
+    const attemptsRemaining = Math.max(0, maxGuestAttempts - guestAttempts)
+    const [showLoginModal, setShowLoginModal] = useState(false)
 
         // ── File selected ───────────────────────────────────────────────
     const handleFileSelected = useCallback((f) => {
@@ -108,6 +116,13 @@ export default function Home() {
     // ── Main pipeline ────────────────────────────────────────────────
     const handleGenerate = async () => {
         if (!file) return
+
+        // Check Freemium limit
+        if (!token && guestAttempts >= maxGuestAttempts) {
+            setShowLoginModal(true)
+            return
+        }
+
         setError(null)
         setCaption('')
         setTranslatedCaption('')
@@ -164,6 +179,10 @@ export default function Home() {
         } catch (err) {
             setError(err.message)
         } finally {
+            if (!token && !error) {
+                // Increment limit on complete
+                localStorage.setItem('ss_guest_attempts', (guestAttempts + 1).toString())
+            }
             setStep(STEP.IDLE)
         }
     }
@@ -190,6 +209,50 @@ export default function Home() {
                 onLoadHistory={handleLoadHistory} 
             />
 
+            {/* Login Prompt Modal */}
+            <AnimatePresence>
+                {showLoginModal && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setShowLoginModal(false)}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                            onClick={e => e.stopPropagation()}
+                            className="w-full max-w-sm p-8 rounded-3xl shadow-2xl text-center"
+                            style={{ 
+                                background: isLight ? '#ffffff' : '#1E293B',
+                                border: isLight ? '1px solid #E2E8F0' : '1px solid #334155'
+                            }}
+                        >
+                            <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-5"
+                                style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1), rgba(6,182,212,0.1))' }}>
+                                <FiGlobe size={28} className="text-indigo-500" />
+                            </div>
+                            <h2 className="text-2xl font-bold mb-3" style={{ color: isLight ? '#0F172A' : '#F1F5F9' }}>
+                                Free Limit Reached
+                            </h2>
+                            <p className="text-sm mb-6" style={{ color: isLight ? '#64748B' : '#94A3B8' }}>
+                                Log in to your account to continue generating unlimited AI image captions and translations.
+                            </p>
+                            <div className="flex flex-col gap-3">
+                                <Link to="/login" className="btn-primary py-3 px-4 w-full">
+                                    Login to Continue
+                                </Link>
+                                <button onClick={() => setShowLoginModal(false)} className="text-xs font-semibold py-2" style={{ color: isLight ? '#94A3B8' : '#64748B' }}>
+                                    Dismiss
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div className="px-4 py-8 md:py-12 max-w-[1280px] mx-auto w-full flex-1">
                 
                 {/* ── Dashboard Header ────────────────────────────────────────── */}
@@ -206,10 +269,6 @@ export default function Home() {
                             <FiLayers className="text-white text-xl" />
                         </div>
                         <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="badge" style={{ background: 'rgba(124,58,237,0.15)', color: '#a855f7' }}>Workspace</span>
-                                <span className="text-xs" style={{ color: isLight ? '#94A3B8' : '#64748B' }}>/ Analysis Studio</span>
-                            </div>
                             <h1 className="text-3xl font-extrabold tracking-tight"
                                 style={{ color: isLight ? '#0F172A' : '#ffffff' }}>
                                 Scene Analysis & Generation
@@ -261,7 +320,6 @@ export default function Home() {
                             
                             <div className="space-y-6">
                                 <div>
-                                    <p className="text-xs font-medium mb-3" style={{ color: isLight ? '#64748B' : '#94A3B8' }}>Inference Density (BLIP-Large + GPT-2)</p>
                                     <StyleModeSelector value={mode} onChange={setMode} disabled={busy} />
                                 </div>
                                 <div className="h-px w-full" style={{ background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)' }} />
@@ -280,7 +338,7 @@ export default function Home() {
                                         <div className="flex items-center gap-3">
                                             <FiMic className={isLight ? "text-indigo-600" : "text-indigo-400"} />
                                             <div>
-                                                <p className="text-sm font-medium" style={{ color: isLight ? '#1E293B' : '#F1F5F9' }}>Synthesize Speech</p>
+                                                <p className="text-sm font-medium" style={{ color: isLight ? '#1E293B' : '#F1F5F9' }}>Voice Assistant</p>
                                                 <p className="text-[11px]" style={{ color: isLight ? '#64748B' : '#94A3B8' }}>Auto-generate neural audio</p>
                                             </div>
                                         </div>
@@ -320,10 +378,21 @@ export default function Home() {
                                 ) : (
                                     <>
                                         <FiCpu size={18} />
-                                        <span>Run Inference Pipeline</span>
+                                        <span>Generate Caption</span>
                                     </>
                                 )}
                             </button>
+
+                            {/* Guest Usage Limit Label */}
+                            {!token && (
+                                <motion.p 
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                    className="text-center text-xs mt-3 font-medium transition-colors"
+                                    style={{ color: attemptsRemaining === 0 ? '#EF4444' : (isLight ? '#64748B' : '#94A3B8') }}
+                                >
+                                    {attemptsRemaining > 0 ? `You have ${attemptsRemaining} free attempt${attemptsRemaining > 1 ? 's' : ''} left` : "0 free attempts left. Please login."}
+                                </motion.p>
+                            )}
 
                             {/* Upload progress */}
                             <AnimatePresence>

@@ -1,19 +1,34 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCamera, FiMenu, FiX, FiSun, FiMoon } from 'react-icons/fi';
+import { FiCamera, FiMenu, FiX, FiSun, FiMoon, FiLogOut } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
+import { getToken, clearSession } from '../services/authApi';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
     const [open, setOpen] = useState(false);
     const { theme, toggleTheme } = useTheme();
     const isLight = theme === 'light';
+    const navigate = useNavigate();
+    const token = getToken();
 
-    const links = [
+    const handleLogout = () => {
+        clearSession();
+        navigate('/');
+    };
+
+    const guestLinks = [
         { label: 'Features', href: '#features' },
         { label: 'How it Works', href: '#how-it-works' },
         { label: 'Login', to: '/login' },
     ];
+
+    const authLinks = [
+        { label: 'Workspace', to: '/app' },
+    ];
+
+    const links = token ? authLinks : guestLinks;
 
     const navBg = isLight
         ? 'rgba(240, 244, 250, 0.85)'
@@ -102,9 +117,15 @@ const Navbar = () => {
                         </AnimatePresence>
                     </button>
 
-                    <Link to="/app" className="btn-primary py-2 px-5 text-sm">
-                        <span>Get Started →</span>
-                    </Link>
+                    {!token ? (
+                        <Link to="/app" className="btn-primary py-2 px-5 text-sm">
+                            <span>Get Started →</span>
+                        </Link>
+                    ) : (
+                        <button onClick={handleLogout} className="btn-secondary py-2 px-5 text-sm flex items-center gap-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30">
+                            <FiLogOut size={15} /> Logout
+                        </button>
+                    )}
                 </div>
 
                 {/* Mobile: toggle + hamburger */}
@@ -169,9 +190,15 @@ const Navbar = () => {
                             </a>
                         )
                     )}
-                    <Link to="/app" onClick={() => setOpen(false)} className="btn-primary text-center mt-2">
-                        <span>Get Started</span>
-                    </Link>
+                    {!token ? (
+                        <Link to="/app" onClick={() => setOpen(false)} className="btn-primary text-center mt-2">
+                            <span>Get Started</span>
+                        </Link>
+                    ) : (
+                        <button onClick={() => { setOpen(false); handleLogout(); }} className="btn-secondary text-center mt-2 flex items-center justify-center gap-2 text-red-500">
+                            <FiLogOut size={15} /> Logout
+                        </button>
+                    )}
                 </motion.div>
             )}
         </motion.nav>

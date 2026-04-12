@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FiX, FiRefreshCw, FiPlay, FiImage, FiCpu, FiClock, FiTrash2 } from 'react-icons/fi'
+import { FiX, FiRefreshCw, FiPlay, FiPause, FiImage, FiCpu, FiClock, FiTrash2 } from 'react-icons/fi'
 import { fetchHistory, deleteHistory } from '../services/api'
 import { useTheme } from '../context/ThemeContext'
 import LoadingSpinner from './LoadingSpinner'
@@ -12,7 +12,9 @@ export default function HistorySidebar({ isOpen, onClose, onLoadHistory }) {
     const [history, setHistory] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-    const [playingAudio, setPlayingAudio] = useState(null)
+    const audioRef = useRef(null)
+    const [playingUrl, setPlayingUrl] = useState(null)
+    const [isPlaying, setIsPlaying] = useState(false)
     const [confirmDeleteId, setConfirmDeleteId] = useState(null)
 
     useEffect(() => {
@@ -20,9 +22,19 @@ export default function HistorySidebar({ isOpen, onClose, onLoadHistory }) {
             loadHistory()
         } else {
             // Stop audio if closed
-            if (playingAudio) {
-                playingAudio.pause()
-                setPlayingAudio(null)
+            if (audioRef.current) {
+                audioRef.current.pause()
+                audioRef.current = null
+            }
+            setIsPlaying(false)
+            setPlayingUrl(null)
+        }
+
+        // Cleanup on unmount
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause()
+                audioRef.current = null
             }
         }
     }, [isOpen])
@@ -40,16 +52,40 @@ export default function HistorySidebar({ isOpen, onClose, onLoadHistory }) {
         }
     }
 
-    const handlePlayAudio = (url) => {
+    const handleToggleAudio = (url) => {
         if (!url) return
-        if (playingAudio) {
-            playingAudio.pause()
-        }
-        const audio = new Audio(url)
-        audio.play()
-        setPlayingAudio(audio)
-        audio.onended = () => {
-            if (playingAudio === audio) setPlayingAudio(null)
+
+        if (playingUrl === url) {
+            // Toggle current audio playback
+            if (isPlaying) {
+                if (audioRef.current) audioRef.current.pause()
+                setIsPlaying(false)
+            } else {
+                if (audioRef.current) {
+                    audioRef.current.play().catch(e => console.error("Audio block:", e))
+                    setIsPlaying(true)
+                }
+            }
+        } else {
+            // Play entirely new audio
+            if (audioRef.current) {
+                audioRef.current.pause()
+            }
+            
+            const newAudio = new Audio(url)
+            audioRef.current = newAudio
+            
+            newAudio.play().catch(e => console.error("Audio block:", e))
+            
+            newAudio.onended = () => {
+                // Ensure this specific audio is still the active one before resetting state
+                if (audioRef.current === newAudio) {
+                    setIsPlaying(false)
+                }
+            }
+            
+            setPlayingUrl(url)
+            setIsPlaying(true)
         }
     }
 
@@ -57,8 +93,12 @@ export default function HistorySidebar({ isOpen, onClose, onLoadHistory }) {
         if (!confirmDeleteId) return
         try {
             await deleteHistory(confirmDeleteId)
+            // Perform an optimistic UI update first
             setHistory(prev => prev.filter(item => item._id !== confirmDeleteId))
             setConfirmDeleteId(null)
+            
+            // Verify backend state is in sync by fetching from MongoDB immediately
+            await loadHistory()
         } catch (err) {
             alert(err.message || 'Failed to delete record.')
             setConfirmDeleteId(null)
@@ -231,12 +271,18 @@ export default function HistorySidebar({ isOpen, onClose, onLoadHistory }) {
                                                         
                                                         {item.audio_url && (
                                                             <button 
-                                                                onClick={() => handlePlayAudio(item.audio_url)}
+                                                                onClick={() => handleToggleAudio(item.audio_url)}
                                                                 className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors ${
-                                                                    isLight ? 'bg-teal-100 hover:bg-teal-200 text-teal-800' : 'bg-teal-500/20 hover:bg-teal-500/40 text-teal-300'
+                                                                    playingUrl === item.audio_url && isPlaying
+                                                                        ? (isLight ? 'bg-amber-100 hover:bg-amber-200 text-amber-800' : 'bg-amber-500/20 hover:bg-amber-500/40 text-amber-300')
+                                                                        : (isLight ? 'bg-teal-100 hover:bg-teal-200 text-teal-800' : 'bg-teal-500/20 hover:bg-teal-500/40 text-teal-300')
                                                                 }`}
                                                             >
-                                                                <FiPlay size={12} /> Play
+                                                                {playingUrl === item.audio_url && isPlaying ? (
+                                                                    <><FiPause size={12} /> Pause</>
+                                                                ) : (
+                                                                    <><FiPlay size={12} /> Play</>
+                                                                )}
                                                             </button>
                                                         )}
                                                         <button 

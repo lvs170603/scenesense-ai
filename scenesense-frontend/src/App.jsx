@@ -9,6 +9,18 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import ParticleBackground from './components/ParticleBackground';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { getToken } from './services/authApi';
+
+const ProtectedRoute = ({ children }) => {
+    const token = getToken();
+    
+    // If there is no token, redirect to the login page
+    if (!token) {
+        return <Navigate to="/login" replace />;
+    }
+    
+    return children;
+};
 
 function AppShell() {
     const { theme } = useTheme();
