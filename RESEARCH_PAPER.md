@@ -199,9 +199,12 @@ Process: tts = gTTS(text=T, lang=gTTS_lang_map[L], slow=False)
 Output: { audio_url: "/static/audio/<filename>", filename }
 ```
 
-### F. Authentication Methodology
+### F. Authentication & Freemium Access Methodology
 
-The authentication system implements three security layers:
+The system implements a tiered access model natively integrated with three security layers:
+
+**Freemium Access Layer:**
+Unauthenticated users are greeted with a frictionless onboarding experience. Temporary guest sessions are tracked persistently via browser `localStorage`. Guests are provisioned 2 free AI pipeline generations, after which the application conditionally renders a security boundary modal forcing authentication.
 
 **Layer 1 — Password Security:**
 Passwords are hashed using bcrypt with a randomly generated salt:
@@ -283,7 +286,8 @@ class CaptionService:
         # Load BLIP-Large (runs only on first request)
 ```
 
-**Model Layer:** Thin PyMongo wrappers provide CRUD operations without an ODM overhead (no MongoEngine/Beanie), keeping the stack minimal and performant.
+**Model Layer:** 
+Thin PyMongo wrappers provide CRUD operations without an ODM overhead (no MongoEngine/Beanie), keeping the stack minimal and performant. To prevent connection leakage and timeout storms under concurrent load, the `MongoClient` instance is governed by a global Singleton connection pool pattern instantiated exclusively at module load time.
 
 ### C. Database Architecture
 
